@@ -105,9 +105,6 @@ class Selector:
     RETURN_TYPES = ("STRING", "IMAGE", "LATENT", "MASK")
 
     def select(self, model, img_embeds, txt_embeds, threshold, count, images=None, latents=None, masks=None):
-        if not count:
-            raise InterruptProcessingException()
-
         with torch.no_grad():
             img_embeds.to(model.device)
             img_embeds = model.get_image_features(**img_embeds)
@@ -117,8 +114,7 @@ class Selector:
             txt_embeds = model.get_text_features(**txt_embeds)
             txt_embeds = txt_embeds / torch.norm(txt_embeds, dim=-1, keepdim=True)
             scores = model.logit_scale.exp() * (txt_embeds @ img_embeds.T)[0]
-            print(scores)
-
+            
             if scores.shape[0] == 1:
                 scores = (scores - 16) / 10
                 scores = scores.clamp(0, 1)

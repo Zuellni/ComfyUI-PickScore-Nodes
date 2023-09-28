@@ -1,2 +1,2 @@
-# ComfyUI-PickScore-Nodes
+# ComfyUI PickScore Nodes
 PickScore Nodes for ComfyUI.

@@ -88,8 +88,8 @@ class Selector:
                 "model": ("PS_MODEL",),
                 "img_embeds": ("IMG_EMBEDS",),
                 "txt_embeds": ("TXT_EMBEDS",),
-                "threshold": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01}),
-                "max_count": ("INT", {"default": 1, "min": 0, "max": 1024}),
+                "threshold": ("FLOAT", {"default": 0, "min": 0, "max": 1, "step": 0.01}),
+                "count": ("INT", {"default": 1, "min": 0, "max": 1024}),
 
             },
             "optional": {
@@ -104,8 +104,8 @@ class Selector:
     RETURN_NAMES = ("SCORES", "IMAGES", "LATENTS", "MASKS")
     RETURN_TYPES = ("STRING", "IMAGE", "LATENT", "MASK")
 
-    def select(self, model, img_embeds, txt_embeds, threshold, max_count, images=None, latents=None, masks=None):
-        if not max_count:
+    def select(self, model, img_embeds, txt_embeds, threshold, count, images=None, latents=None, masks=None):
+        if not count:
             raise InterruptProcessingException()
 
         with torch.no_grad():
@@ -116,13 +116,18 @@ class Selector:
             txt_embeds.to(model.device)
             txt_embeds = model.get_text_features(**txt_embeds)
             txt_embeds = txt_embeds / torch.norm(txt_embeds, dim=-1, keepdim=True)
+            scores = model.logit_scale.exp() * (txt_embeds @ img_embeds.T)[0]
+            print(scores)
 
-            scores = (model.logit_scale.exp() * (txt_embeds @ img_embeds.T)[0])
-            scores = scores / 100 if scores.shape[0] == 1 else torch.softmax(scores, dim=-1)
+            if scores.shape[0] == 1:
+                scores = (scores - 16) / 10
+                scores = scores.clamp(0, 1)
+            else:
+                scores = torch.softmax(scores, dim=-1)
 
         scores = scores.cpu().tolist()
         scores = {k: v for k, v in enumerate(scores) if v >= threshold}
-        scores = sorted(scores.items(), key=lambda k: k[1], reverse=True)[:max_count]
+        scores = sorted(scores.items(), key=lambda k: k[1], reverse=True)[:count]
         scores_str = ", ".join([str(round(v, 3)) for k, v in scores])
 
         if images is not None:

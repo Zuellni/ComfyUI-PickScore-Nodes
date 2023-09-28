@@ -10,7 +10,7 @@ class Loader:
             "required": {
                 "path": ("STRING", {"default": "yuvalkirstain/PickScore_v1"}),
                 "device": (["cuda", "cpu"], {"default": "cuda"}),
-                "dtype": (["float32", "bfloat16", "float16"], {"default": "bfloat16"}),
+                "dtype": (["float16", "bfloat16", "float32"], {"default": "bfloat16"}),
             },
         }
 

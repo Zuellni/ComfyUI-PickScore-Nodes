@@ -89,7 +89,7 @@ class Selector:
                 "img_embeds": ("IMG_EMBEDS",),
                 "txt_embeds": ("TXT_EMBEDS",),
                 "threshold": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01}),
-                "max_count": ("INT", {"default": 1, "min": -1, "max": 1024}),
+                "max_count": ("INT", {"default": 1, "min": 0, "max": 1024}),
 
             },
             "optional": {

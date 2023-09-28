@@ -17,7 +17,7 @@ class Loader:
     CATEGORY = "Zuellni/PickScore"
     FUNCTION = "load"
     RETURN_NAMES = ("MODEL", "PROCESSOR")
-    RETURN_TYPES = ("PICKSCORE_MODEL", "PICKSCORE_PROCESSOR")
+    RETURN_TYPES = ("PS_MODEL", "PS_PROCESSOR")
 
     def load(self, path, device, dtype):
         dtype = torch.float32 if device == "cpu" else getattr(torch, dtype)
@@ -32,17 +32,17 @@ class ImageProcessor:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "processor": ("PICKSCORE_PROCESSOR",),
+                "processor": ("PS_PROCESSOR",),
                 "images": ("IMAGE",),
             },
         }
 
     CATEGORY = "Zuellni/PickScore"
     FUNCTION = "process"
-    RETURN_TYPES = ("IMAGE_EMBEDS",)
+    RETURN_TYPES = ("IMG_EMBEDS",)
 
     def process(self, processor, images):
-        image_embeds = processor(
+        img_embeds = processor(
             images=images,
             do_rescale=False,
             padding=True,
@@ -51,7 +51,7 @@ class ImageProcessor:
             return_tensors="pt",
         )
 
-        return (image_embeds,)
+        return (img_embeds,)
 
 
 class TextProcessor:
@@ -59,17 +59,17 @@ class TextProcessor:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "processor": ("PICKSCORE_PROCESSOR",),
+                "processor": ("PS_PROCESSOR",),
                 "text": ("STRING", {"multiline": True}),
             },
         }
 
     CATEGORY = "Zuellni/PickScore"
     FUNCTION = "process"
-    RETURN_TYPES = ("TEXT_EMBEDS",)
+    RETURN_TYPES = ("TXT_EMBEDS",)
 
     def process(self, processor, text):
-        text_embeds = processor(
+        txt_embeds = processor(
             text=text,
             padding=True,
             truncation=True,
@@ -77,7 +77,7 @@ class TextProcessor:
             return_tensors="pt",
         )
 
-        return (text_embeds,)
+        return (txt_embeds,)
 
 
 class Selector:
@@ -85,11 +85,11 @@ class Selector:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "model": ("PICKSCORE_MODEL",),
-                "image_embeds": ("IMAGE_EMBEDS",),
-                "text_embeds": ("TEXT_EMBEDS",),
+                "model": ("PS_MODEL",),
+                "img_embeds": ("IMG_EMBEDS",),
+                "txt_embeds": ("TXT_EMBEDS",),
                 "threshold": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01}),
-                "count": ("INT", {"default": 1, "min": 0, "max": 1024}),
+                "max_count": ("INT", {"default": 1, "min": -1, "max": 1024}),
 
             },
             "optional": {
@@ -104,37 +104,37 @@ class Selector:
     RETURN_NAMES = ("SCORES", "IMAGES", "LATENTS", "MASKS")
     RETURN_TYPES = ("STRING", "IMAGE", "LATENT", "MASK")
 
-    def select(self, model, image_embeds, text_embeds, threshold, count, images=None, latents=None, masks=None):
-        if not count:
+    def select(self, model, img_embeds, txt_embeds, threshold, max_count, images=None, latents=None, masks=None):
+        if not max_count:
             raise InterruptProcessingException()
 
         with torch.no_grad():
-            image_embeds.to(model.device)
-            image_embeds = model.get_image_features(**image_embeds)
-            image_embeds = image_embeds / torch.norm(image_embeds, dim=-1, keepdim=True)
+            img_embeds.to(model.device)
+            img_embeds = model.get_image_features(**img_embeds)
+            img_embeds = img_embeds / torch.norm(img_embeds, dim=-1, keepdim=True)
 
-            text_embeds.to(model.device)
-            text_embeds = model.get_text_features(**text_embeds)
-            text_embeds = text_embeds / torch.norm(text_embeds, dim=-1, keepdim=True)
+            txt_embeds.to(model.device)
+            txt_embeds = model.get_text_features(**txt_embeds)
+            txt_embeds = txt_embeds / torch.norm(txt_embeds, dim=-1, keepdim=True)
 
-            scores = (model.logit_scale.exp() * (text_embeds @ image_embeds.T)[0])
+            scores = (model.logit_scale.exp() * (txt_embeds @ img_embeds.T)[0])
             scores = torch.softmax(scores, dim=-1).cpu().tolist()
 
-        scores = {k: v for k, v in enumerate(scores)}
-        scores = sorted(scores.items(), key=lambda k: k[1], reverse=True)[:count]
+        scores = {k: v for k, v in enumerate(scores) if v >= threshold}
+        scores = sorted(scores.items(), key=lambda k: k[1], reverse=True)[:max_count]
         scores_str = ", ".join([str(round(v, 3)) for k, v in scores])
 
         if images is not None:
-            images = [images[v[0]] for v in scores if v[1] >= threshold]
+            images = [images[v[0]] for v in scores]
             images = torch.stack(images) if images else None
 
         if latents is not None:
             latents = latents["samples"]
-            latents = [latents[v[0]] for v in scores if v[1] >= threshold]
+            latents = [latents[v[0]] for v in scores]
             latents = {"samples": torch.stack(latents)} if latents else None
 
         if masks is not None:
-            masks = [masks[v[0]] for v in scores if v[1] >= threshold]
+            masks = [masks[v[0]] for v in scores]
             masks = torch.stack(masks) if masks else None
 
         if images is None and latents is None and masks is None:

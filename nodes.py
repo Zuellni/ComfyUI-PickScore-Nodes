@@ -118,8 +118,9 @@ class Selector:
             txt_embeds = txt_embeds / torch.norm(txt_embeds, dim=-1, keepdim=True)
 
             scores = (model.logit_scale.exp() * (txt_embeds @ img_embeds.T)[0])
-            scores = torch.softmax(scores, dim=-1).cpu().tolist()
+            scores = scores / 100 if scores.shape[0] == 1 else torch.softmax(scores, dim=-1)
 
+        scores = scores.cpu().tolist()
         scores = {k: v for k, v in enumerate(scores) if v >= threshold}
         scores = sorted(scores.items(), key=lambda k: k[1], reverse=True)[:max_count]
         scores_str = ", ".join([str(round(v, 3)) for k, v in scores])

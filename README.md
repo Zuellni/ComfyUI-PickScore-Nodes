@@ -18,4 +18,4 @@ Selector | Selects `count` best images/latents/masks. Interrupts generation if t
 ## Workflow
 The image below can be opened in ComfyUI.
 
-![workflow](https://github.com/Zuellni/ComfyUI-PickScore-Nodes/assets/123005779/302eb85e-7d8d-494a-bed4-bcfb2453b66a)
+![workflow](https://github.com/Zuellni/ComfyUI-PickScore-Nodes/assets/123005779/769c070d-842b-4864-b9ea-2566dbeafde0)

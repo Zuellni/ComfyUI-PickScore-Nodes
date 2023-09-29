@@ -1,6 +1,5 @@
 # ComfyUI PickScore Nodes
-Image scoring nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI) utilizing [PickScore](https://github.com/yuvalkirstain/PickScore).<br>
-Used with a batch of images to check which ones fit a given prompt the best.
+Image scoring nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI) using [PickScore](https://github.com/yuvalkirstain/PickScore) with a batch of images to check which ones fit a given prompt the best.
 
 ## Installation
 Make sure your ComfyUI is up to date and clone the repository to `custom_nodes`:

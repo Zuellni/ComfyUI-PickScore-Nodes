@@ -88,10 +88,7 @@ class Selector:
                 "model": ("PS_MODEL",),
                 "img_embeds": ("IMG_EMBEDS",),
                 "txt_embeds": ("TXT_EMBEDS",),
-                "threshold": (
-                    "FLOAT",
-                    {"default": 0, "min": 0, "max": 1, "step": 0.01},
-                ),
+                "threshold": ("FLOAT", {"default": 0, "min": 0, "max": 1, "step": 0.01}),
                 "count": ("INT", {"default": 1, "min": 1, "max": 1024}),
             },
             "optional": {

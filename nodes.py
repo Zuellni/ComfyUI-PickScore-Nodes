@@ -88,7 +88,7 @@ class Selector:
                 "model": ("PS_MODEL",),
                 "img_embeds": ("IMG_EMBEDS",),
                 "txt_embeds": ("TXT_EMBEDS",),
-                "threshold": ("FLOAT", {"default": 0, "min": 0, "max": 1, "step": 0.01}),
+                "threshold": ("FLOAT", {"default": 0, "min": 0, "max": 1, "step": 0.001}),
                 "count": ("INT", {"default": 1, "min": 1, "max": 1024}),
             },
             "optional": {
@@ -122,12 +122,11 @@ class Selector:
             txt_embeds.to(model.device)
             txt_embeds = model.get_text_features(**txt_embeds)
             txt_embeds = txt_embeds / torch.norm(txt_embeds, dim=-1, keepdim=True)
-            scores = model.logit_scale.exp() * (txt_embeds.float() @ img_embeds.float().T)[0]
 
-            if scores.shape[0] == 1:
-                scores = (scores - 16) / 10
-                scores = scores.clamp(0, 1)
-            else:
+            scores = (txt_embeds @ img_embeds.T)[0]
+
+            if scores.shape[0] > 1:
+                scores = model.logit_scale.exp() * scores
                 scores = torch.softmax(scores, dim=-1)
 
         scores = scores.cpu().tolist()

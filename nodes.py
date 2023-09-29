@@ -22,7 +22,7 @@ class Loader:
     def load(self, path, device, dtype):
         dtype = torch.float32 if device == "cpu" else getattr(torch, dtype)
         model = AutoModel.from_pretrained(path, torch_dtype=dtype).eval().to(device)
-        processor = AutoProcessor.from_pretrained(path, torch_dtype=dtype)
+        processor = AutoProcessor.from_pretrained(path)
 
         return (model, processor)
 
@@ -122,7 +122,7 @@ class Selector:
             txt_embeds.to(model.device)
             txt_embeds = model.get_text_features(**txt_embeds)
             txt_embeds = txt_embeds / torch.norm(txt_embeds, dim=-1, keepdim=True)
-            scores = model.logit_scale.exp() * (txt_embeds @ img_embeds.T)[0]
+            scores = model.logit_scale.exp() * (txt_embeds.float() @ img_embeds.float().T)[0]
 
             if scores.shape[0] == 1:
                 scores = (scores - 16) / 10

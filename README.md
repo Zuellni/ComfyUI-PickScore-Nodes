@@ -11,9 +11,9 @@ Name | Description
 :--- | :---
 Loader | Loads scoring models from [Hugging Face](https://huggingface.co) or a given directory. The [default](https://huggingface.co/yuvalkirstain/PickScore_v1) one is around 4GB.
 Processor | Takes images/text and converts them to inputs for the `Selector` node.
-Selector | Selects up to `count` best images/latents/masks. Interrupts generation if the `threshold` isn't reached.
+Selector | Selects up to `count` best images/latents/masks. Interrupts processing if the `threshold` isn't reached.
 
 ## Workflow
 The image below can be opened in ComfyUI.
 
-![workflow](https://github.com/Zuellni/ComfyUI-PickScore-Nodes/assets/123005779/769c070d-842b-4864-b9ea-2566dbeafde0)
+![workflow](https://github.com/Zuellni/ComfyUI-PickScore-Nodes/assets/123005779/e8753778-7c54-418a-a6d8-a2a18fee0c2e)

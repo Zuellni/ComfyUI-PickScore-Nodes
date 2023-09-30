@@ -39,19 +39,19 @@ class ImageProcessor:
 
     CATEGORY = "Zuellni/PickScore"
     FUNCTION = "process"
-    RETURN_TYPES = ("IMG_EMBEDS",)
+    RETURN_TYPES = ("IMAGE_INPUTS",)
 
     def process(self, processor, images):
-        img_embeds = processor(
-            images=images,
-            do_rescale=False,
-            padding=True,
-            truncation=True,
-            max_length=77,
-            return_tensors="pt",
+        return (
+            processor(
+                images=images,
+                do_rescale=False,
+                padding=True,
+                truncation=True,
+                max_length=77,
+                return_tensors="pt",
+            ),
         )
-
-        return (img_embeds,)
 
 
 class TextProcessor:
@@ -66,18 +66,18 @@ class TextProcessor:
 
     CATEGORY = "Zuellni/PickScore"
     FUNCTION = "process"
-    RETURN_TYPES = ("TXT_EMBEDS",)
+    RETURN_TYPES = ("TEXT_INPUTS",)
 
     def process(self, processor, text):
-        txt_embeds = processor(
-            text=text,
-            padding=True,
-            truncation=True,
-            max_length=77,
-            return_tensors="pt",
+        return (
+            processor(
+                text=text,
+                padding=True,
+                truncation=True,
+                max_length=77,
+                return_tensors="pt",
+            ),
         )
-
-        return (txt_embeds,)
 
 
 class Selector:
@@ -86,8 +86,8 @@ class Selector:
         return {
             "required": {
                 "model": ("PS_MODEL",),
-                "img_embeds": ("IMG_EMBEDS",),
-                "txt_embeds": ("TXT_EMBEDS",),
+                "image_inputs": ("IMAGE_INPUTS",),
+                "text_inputs": ("TEXT_INPUTS",),
                 "threshold": ("FLOAT", {"default": 0, "min": 0, "max": 1, "step": 0.001}),
                 "count": ("INT", {"default": 1, "min": 1, "max": 1024}),
             },
@@ -106,8 +106,8 @@ class Selector:
     def select(
         self,
         model,
-        img_embeds,
-        txt_embeds,
+        image_inputs,
+        text_inputs,
         threshold,
         count,
         images=None,
@@ -115,15 +115,15 @@ class Selector:
         masks=None,
     ):
         with torch.no_grad():
-            img_embeds.to(model.device)
-            img_embeds = model.get_image_features(**img_embeds)
-            img_embeds = img_embeds / torch.norm(img_embeds, dim=-1, keepdim=True)
+            image_inputs.to(model.device)
+            image_embeds = model.get_image_features(**image_inputs)
+            image_embeds = image_embeds / torch.norm(image_embeds, dim=-1, keepdim=True)
 
-            txt_embeds.to(model.device)
-            txt_embeds = model.get_text_features(**txt_embeds)
-            txt_embeds = txt_embeds / torch.norm(txt_embeds, dim=-1, keepdim=True)
+            text_inputs.to(model.device)
+            text_embeds = model.get_text_features(**text_inputs)
+            text_embeds = text_embeds / torch.norm(text_embeds, dim=-1, keepdim=True)
 
-            scores = (txt_embeds @ img_embeds.T)[0]
+            scores = (text_embeds.float() @ image_embeds.float().T)[0]
 
             if scores.shape[0] > 1:
                 scores = model.logit_scale.exp() * scores

@@ -10,8 +10,8 @@ git clone https://github.com/Zuellni/ComfyUI-PickScore-Nodes
 Name | Description
 :--- | :---
 Loader | Loads scoring models from [Hugging Face](https://huggingface.co) or a given directory. The [default](https://huggingface.co/yuvalkirstain/PickScore_v1) one is around 4GB.
-Processor | Takes images/text and converts them to embeddings.
-Selector | Selects up to `count` best images/latents/masks. Interrupts generation if the `threshold` isn't met.
+Processor | Takes images/text and converts them to inputs for the `Selector` node.
+Selector | Selects up to `count` best images/latents/masks. Interrupts generation if the `threshold` isn't reached.
 
 ## Workflow
 The image below can be opened in ComfyUI.

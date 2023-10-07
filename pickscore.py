@@ -88,8 +88,8 @@ class Selector:
                 "model": ("PS_MODEL",),
                 "image_inputs": ("IMAGE_INPUTS",),
                 "text_inputs": ("TEXT_INPUTS",),
-                "threshold": ("FLOAT", {"default": 0, "min": 0, "max": 1, "step": 0.001}),
-                "count": ("INT", {"default": 1, "min": 1, "max": 1024}),
+                "threshold": ("FLOAT", {"default": 0, "max": 1, "step": 0.001}),
+                "limit": ("INT", {"default": 1, "min": 1, "max": 1024}),
             },
             "optional": {
                 "images": ("IMAGE",),
@@ -109,7 +109,7 @@ class Selector:
         image_inputs,
         text_inputs,
         threshold,
-        count,
+        limit,
         images=None,
         latents=None,
         masks=None,
@@ -131,7 +131,7 @@ class Selector:
 
         scores = scores.cpu().tolist()
         scores = {k: v for k, v in enumerate(scores) if v >= threshold}
-        scores = sorted(scores.items(), key=lambda k: k[1], reverse=True)[:count]
+        scores = sorted(scores.items(), key=lambda k: k[1], reverse=True)[:limit]
         scores_str = ", ".join([str(round(v, 3)) for k, v in scores])
 
         if images is not None:
@@ -151,3 +151,18 @@ class Selector:
             raise InterruptProcessingException()
 
         return (scores_str, images, latents, masks)
+
+
+NODE_CLASS_MAPPINGS = {
+    "ZuellniPickScoreLoader": Loader,
+    "ZuellniPickScoreImageProcessor": ImageProcessor,
+    "ZuellniPickScoreTextProcessor": TextProcessor,
+    "ZuellniPickScoreSelector": Selector,
+}
+
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "ZuellniPickScoreLoader": "Loader",
+    "ZuellniPickScoreImageProcessor": "Image Processor",
+    "ZuellniPickScoreTextProcessor": "Text Processor",
+    "ZuellniPickScoreSelector": "Selector",
+}

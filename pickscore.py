@@ -1,8 +1,6 @@
 import torch
-from transformers import AutoModel, AutoProcessor
-
 from comfy.model_management import InterruptProcessingException
-from nodes import MAX_RESOLUTION as MAX
+from transformers import AutoModel, AutoProcessor
 
 
 class Loader:
@@ -91,7 +89,7 @@ class Selector:
                 "image_inputs": ("IMAGE_INPUTS",),
                 "text_inputs": ("TEXT_INPUTS",),
                 "threshold": ("FLOAT", {"max": 1, "step": 0.001}),
-                "limit": ("INT", {"default": 1, "min": 1, "max": MAX}),
+                "limit": ("INT", {"default": 1, "min": 1, "max": 1000}),
             },
             "optional": {
                 "images": ("IMAGE",),
@@ -116,7 +114,7 @@ class Selector:
         latents=None,
         masks=None,
     ):
-        with torch.no_grad():
+        with torch.inference_mode():
             image_inputs = image_inputs.to(model.device, dtype=model.dtype)
             image_embeds = model.get_image_features(image_inputs)
             image_embeds = image_embeds / torch.norm(image_embeds, dim=-1, keepdim=True)

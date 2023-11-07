@@ -88,8 +88,8 @@ class Selector:
                 "model": ("PS_MODEL",),
                 "image_inputs": ("IMAGE_INPUTS",),
                 "text_inputs": ("TEXT_INPUTS",),
-                "threshold": ("FLOAT", {"default": 0, "max": 1, "step": 0.001}),
-                "limit": ("INT", {"default": 1, "min": 1, "max": 1024}),
+                "threshold": ("FLOAT", {"max": 1, "step": 0.001}),
+                "limit": ("INT", {"default": 1, "min": 1, "max": 1000}),
             },
             "optional": {
                 "images": ("IMAGE",),

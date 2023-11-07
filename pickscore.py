@@ -1,6 +1,8 @@
 import torch
-from comfy.model_management import InterruptProcessingException
 from transformers import AutoModel, AutoProcessor
+
+from comfy.model_management import InterruptProcessingException
+from nodes import MAX_RESOLUTION as MAX
 
 
 class Loader:
@@ -89,7 +91,7 @@ class Selector:
                 "image_inputs": ("IMAGE_INPUTS",),
                 "text_inputs": ("TEXT_INPUTS",),
                 "threshold": ("FLOAT", {"max": 1, "step": 0.001}),
-                "limit": ("INT", {"default": 1, "min": 1, "max": 1000}),
+                "limit": ("INT", {"default": 1, "min": 1, "max": MAX}),
             },
             "optional": {
                 "images": ("IMAGE",),

@@ -50,7 +50,7 @@ class ImageProcessor:
                 truncation=True,
                 max_length=77,
                 return_tensors="pt",
-            )["pixel_values"],
+            ),
         )
 
 
@@ -76,7 +76,7 @@ class TextProcessor:
                 truncation=True,
                 max_length=77,
                 return_tensors="pt",
-            )["input_ids"],
+            ),
         )
 
 
@@ -115,12 +115,12 @@ class Selector:
         masks=None,
     ):
         with torch.inference_mode():
-            image_inputs = image_inputs.to(model.device, dtype=model.dtype)
-            image_embeds = model.get_image_features(image_inputs)
+            image_inputs = image_inputs.to(model.device)
+            image_embeds = model.get_image_features(**image_inputs)
             image_embeds = image_embeds / torch.norm(image_embeds, dim=-1, keepdim=True)
 
             text_inputs = text_inputs.to(model.device)
-            text_embeds = model.get_text_features(text_inputs)
+            text_embeds = model.get_text_features(**text_inputs)
             text_embeds = text_embeds / torch.norm(text_embeds, dim=-1, keepdim=True)
 
             scores = (text_embeds.float() @ image_embeds.float().T)[0]

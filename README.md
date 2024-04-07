@@ -16,4 +16,4 @@ Selector | Selects up to `limit` best images and passes them to other nodes alon
 ## Workflow
 The image below can be opened in ComfyUI.
 
-![workflow](https://github.com/Zuellni/ComfyUI-PickScore-Nodes/assets/123005779/e8753778-7c54-418a-a6d8-a2a18fee0c2e)
+![workflow](https://github.com/Zuellni/ComfyUI-PickScore-Nodes/assets/123005779/9f439d31-c3cc-4e06-b650-eb2e102344e6)

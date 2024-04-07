@@ -1,6 +1,9 @@
 import torch
-from comfy.model_management import InterruptProcessingException
-from transformers import AutoModel, AutoProcessor
+from comfy.model_management import InterruptProcessingException, get_torch_device
+from transformers import CLIPModel, CLIPProcessor
+
+_CATEGORY = "Zuellni/PickScore"
+_MAPPING = "ZuellniPickScore"
 
 
 class Loader:
@@ -9,75 +12,61 @@ class Loader:
         return {
             "required": {
                 "path": ("STRING", {"default": "yuvalkirstain/PickScore_v1"}),
-                "device": (("cuda", "cpu"),),
-                "dtype": (("float16", "bfloat16", "float32"),),
             },
         }
 
-    CATEGORY = "Zuellni/PickScore"
-    FUNCTION = "load"
-    RETURN_NAMES = ("MODEL", "PROCESSOR")
-    RETURN_TYPES = ("PS_MODEL", "PS_PROCESSOR")
+    CATEGORY = _CATEGORY
+    FUNCTION = "setup"
+    RETURN_NAMES = ("MODEL",)
+    RETURN_TYPES = ("PS_MODEL",)
 
-    def load(self, path, device, dtype):
-        dtype = torch.float32 if device == "cpu" else getattr(torch, dtype)
-        model = AutoModel.from_pretrained(path, torch_dtype=dtype).eval().to(device)
-        processor = AutoProcessor.from_pretrained(path)
+    def setup(self, path):
+        self.device = get_torch_device()
+        self.dtype = torch.float32 if self.device == torch.device("cpu") else torch.float16
+        self.pipeline = CLIPModel.from_pretrained(path, torch_dtype=self.dtype).eval()
+        self.processor = CLIPProcessor.from_pretrained(path)
 
-        return (model, processor)
+        return (self,)
+
+    def load(self):
+        self.pipeline.to(self.device)
+
+    def offload(self):
+        self.pipeline.cpu()
 
 
-class ImageProcessor:
+class Processor:
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "processor": ("PS_PROCESSOR",),
+                "model": ("PS_MODEL",),
                 "images": ("IMAGE",),
-            },
-        }
-
-    CATEGORY = "Zuellni/PickScore"
-    FUNCTION = "process"
-    RETURN_TYPES = ("IMAGE_INPUTS",)
-
-    def process(self, processor, images):
-        return (
-            processor(
-                images=images,
-                do_rescale=False,
-                padding=True,
-                truncation=True,
-                max_length=77,
-                return_tensors="pt",
-            ),
-        )
-
-
-class TextProcessor:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "processor": ("PS_PROCESSOR",),
                 "text": ("STRING", {"multiline": True}),
             },
         }
 
-    CATEGORY = "Zuellni/PickScore"
+    CATEGORY = _CATEGORY
     FUNCTION = "process"
-    RETURN_TYPES = ("TEXT_INPUTS",)
+    RETURN_NAMES = ("INPUTS",)
+    RETURN_TYPES = ("PS_INPUTS",)
 
-    def process(self, processor, text):
-        return (
-            processor(
-                text=text,
-                padding=True,
-                truncation=True,
-                max_length=77,
-                return_tensors="pt",
-            ),
-        )
+    def process(self, model, images, text):
+        image_inputs = model.processor(
+            images=images,
+            do_rescale=False,
+            return_tensors="pt",
+        ).to(model.device)
+
+        text_inputs = model.processor(
+            text=text,
+            padding=True,
+            truncation=True,
+            max_length=77,
+            return_tensors="pt",
+        ).to(model.device)
+
+        return ((image_inputs, text_inputs),)
 
 
 class Selector:
@@ -86,8 +75,7 @@ class Selector:
         return {
             "required": {
                 "model": ("PS_MODEL",),
-                "image_inputs": ("IMAGE_INPUTS",),
-                "text_inputs": ("TEXT_INPUTS",),
+                "inputs": ("PS_INPUTS",),
                 "threshold": ("FLOAT", {"max": 1, "step": 0.001}),
                 "limit": ("INT", {"default": 1, "min": 1, "max": 1000}),
             },
@@ -98,7 +86,7 @@ class Selector:
             },
         }
 
-    CATEGORY = "Zuellni/PickScore"
+    CATEGORY = _CATEGORY
     FUNCTION = "select"
     RETURN_NAMES = ("SCORES", "IMAGES", "LATENTS", "MASKS")
     RETURN_TYPES = ("STRING", "IMAGE", "LATENT", "MASK")
@@ -106,29 +94,30 @@ class Selector:
     def select(
         self,
         model,
-        image_inputs,
-        text_inputs,
+        inputs,
         threshold,
         limit,
         images=None,
         latents=None,
         masks=None,
     ):
+        image_inputs, text_inputs = inputs
+        model.load()
+
         with torch.inference_mode():
-            image_inputs = image_inputs.to(model.device)
-            image_embeds = model.get_image_features(**image_inputs)
+            image_embeds = model.pipeline.get_image_features(**image_inputs)
             image_embeds = image_embeds / torch.norm(image_embeds, dim=-1, keepdim=True)
 
-            text_inputs = text_inputs.to(model.device)
-            text_embeds = model.get_text_features(**text_inputs)
+            text_embeds = model.pipeline.get_text_features(**text_inputs)
             text_embeds = text_embeds / torch.norm(text_embeds, dim=-1, keepdim=True)
 
             scores = (text_embeds.float() @ image_embeds.float().T)[0]
 
             if scores.shape[0] > 1:
-                scores = model.logit_scale.exp() * scores
+                scores = model.pipeline.logit_scale.exp() * scores
                 scores = torch.softmax(scores, dim=-1)
 
+        model.offload()
         scores = scores.cpu().tolist()
         scores = {k: v for k, v in enumerate(scores) if v >= threshold}
         scores = sorted(scores.items(), key=lambda k: k[1], reverse=True)[:limit]
@@ -154,15 +143,13 @@ class Selector:
 
 
 NODE_CLASS_MAPPINGS = {
-    "ZuellniPickScoreLoader": Loader,
-    "ZuellniPickScoreImageProcessor": ImageProcessor,
-    "ZuellniPickScoreTextProcessor": TextProcessor,
-    "ZuellniPickScoreSelector": Selector,
+    f"{_MAPPING}Loader": Loader,
+    f"{_MAPPING}Processor": Processor,
+    f"{_MAPPING}Selector": Selector,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ZuellniPickScoreLoader": "Loader",
-    "ZuellniPickScoreImageProcessor": "Image Processor",
-    "ZuellniPickScoreTextProcessor": "Text Processor",
-    "ZuellniPickScoreSelector": "Selector",
+    f"{_MAPPING}Loader": "Loader",
+    f"{_MAPPING}Processor": "Processor",
+    f"{_MAPPING}Selector": "Selector",
 }

@@ -4,7 +4,7 @@ Image scoring nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI) usi
 ## Installation
 Make sure your ComfyUI is up to date and clone the repository to `custom_nodes`:
 ```
-git clone https://github.com/Zuellni/ComfyUI-PickScore-Nodes
+git clone https://github.com/Zuellni/ComfyUI-PickScore-Nodes custom_nodes/ComfyUI-PickScore-Nodes
 ```
 
 ## Nodes

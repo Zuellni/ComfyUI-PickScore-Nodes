@@ -2,7 +2,7 @@
 Image scoring nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI) using [PickScore](https://github.com/yuvalkirstain/PickScore) to predict which images in a batch best fit a given prompt.
 
 ## Installation
-Make sure your ComfyUI is up to date and clone the repository to `custom_nodes`:
+Clone the repository to `custom_nodes`:
 ```
 git clone https://github.com/Zuellni/ComfyUI-PickScore-Nodes custom_nodes/ComfyUI-PickScore-Nodes
 ```

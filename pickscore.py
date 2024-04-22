@@ -1,6 +1,7 @@
 import torch
-from comfy.model_management import InterruptProcessingException, get_torch_device
 from transformers import CLIPModel, CLIPProcessor
+
+from comfy.model_management import InterruptProcessingException, get_torch_device
 
 _CATEGORY = "Zuellni/PickScore"
 _MAPPING = "ZuellniPickScore"

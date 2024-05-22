@@ -1,0 +1,14 @@
+[project]
+name = "comfyui-pickscore-nodes"
+description = "Image scoring nodes for ComfyUI using PickScore with a batch of images to predict which ones fit a given prompt the best."
+version = "1.0.0"
+license = "LICENSE"
+
+[project.urls]
+Repository = "https://github.com/Zuellni/ComfyUI-PickScore-Nodes"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "ComfyUI-PickScore-Nodes"
+Icon = ""

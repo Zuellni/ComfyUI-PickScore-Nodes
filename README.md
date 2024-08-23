@@ -10,11 +10,11 @@ git clone https://github.com/Zuellni/ComfyUI-PickScore-Nodes custom_nodes/ComfyU
 ## Nodes
 Name | Description
 :--- | :---
-Loader | Loads scoring models from [Hugging Face](https://huggingface.co) or a given directory. The [default model](https://huggingface.co/yuvalkirstain/PickScore_v1) is about 4 GB.
+Loader | Loads scoring models from [Hugging Face](https://huggingface.co) or a given directory. Uses [yuvalkirstain/PickScore_v1](https://huggingface.co/yuvalkirstain/PickScore_v1) by default.
 Processor | Takes images/text and converts them to inputs for the `Selector` node.
 Selector | Selects up to `limit` images and passes them to other nodes along with latents/masks of the same shape. Interrupts processing if the `threshold` isn't reached.
 
 ## Workflow
 An example workflow is embedded in the image below and can be opened in ComfyUI.
 
-![workflow](https://github.com/Zuellni/ComfyUI-PickScore-Nodes/assets/123005779/9f439d31-c3cc-4e06-b650-eb2e102344e6)
+![Workflow](https://github.com/Zuellni/ComfyUI-PickScore-Nodes/assets/123005779/9f439d31-c3cc-4e06-b650-eb2e102344e6)

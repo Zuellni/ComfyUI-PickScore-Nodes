@@ -1,9 +1,13 @@
 import torch
 from transformers import CLIPModel, CLIPProcessor
 
-from comfy.model_management import InterruptProcessingException, get_torch_device
+from comfy.model_management import (
+    InterruptProcessingException,
+    get_torch_device,
+    soft_empty_cache,
+)
 
-_CATEGORY = "Zuellni/PickScore"
+_CATEGORY = "zuellni/pickscore"
 _MAPPING = "ZuellniPickScore"
 
 
@@ -23,8 +27,12 @@ class Loader:
 
     def setup(self, path):
         self.device = get_torch_device()
-        self.dtype = torch.float32 if self.device == torch.device("cpu") else torch.float16
-        self.pipeline = CLIPModel.from_pretrained(path, torch_dtype=self.dtype).eval()
+
+        self.dtype = (
+            torch.float32 if self.device == torch.device("cpu") else torch.float16
+        )
+
+        self.model = CLIPModel.from_pretrained(path, torch_dtype=self.dtype).eval()
         self.processor = CLIPProcessor.from_pretrained(path)
 
         return (self,)
@@ -34,6 +42,7 @@ class Loader:
 
     def offload(self):
         self.pipeline.cpu()
+        soft_empty_cache()
 
 
 class Processor:
@@ -43,7 +52,7 @@ class Processor:
             "required": {
                 "model": ("PS_MODEL",),
                 "images": ("IMAGE",),
-                "text": ("STRING", {"multiline": True}),
+                "text": ("STRING", {"default": "", "multiline": True}),
             },
         }
 
@@ -77,7 +86,10 @@ class Selector:
             "required": {
                 "model": ("PS_MODEL",),
                 "inputs": ("PS_INPUTS",),
-                "threshold": ("FLOAT", {"max": 1, "step": 0.001}),
+                "threshold": (
+                    "FLOAT",
+                    {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001},
+                ),
                 "limit": ("INT", {"default": 1, "min": 1, "max": 1000}),
             },
             "optional": {

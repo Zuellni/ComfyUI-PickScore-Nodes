@@ -32,7 +32,7 @@ class Loader:
             torch.float32 if self.device == torch.device("cpu") else torch.float16
         )
 
-        self.model = CLIPModel.from_pretrained(path, torch_dtype=self.dtype).eval()
+        self.pipeline = CLIPModel.from_pretrained(path, torch_dtype=self.dtype).eval()
         self.processor = CLIPProcessor.from_pretrained(path)
 
         return (self,)
